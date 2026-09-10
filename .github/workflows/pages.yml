@@ -1,0 +1,62 @@
+name: Version documents
+
+on:
+  # Dispatched by harmoniya-net/horno when it publishes a release, since every
+  # document names that release by URL and sha1.
+  schedule:
+    # Forge and NeoForge publish a handful of builds a day between them; a cold
+    # cache is the expensive run, every one after it is a few hundred requests.
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Restore the document cache
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: documents-${{ github.run_id }}
+          restore-keys: documents-
+      - name: Resolve the horno release
+        id: horno
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # The jar lives in another repository now. Its latest release is what the
+        # documents name — reading it here is what keeps the two in step without
+        # a version pinned in two places.
+        run: echo "tag=$(gh release view -R harmoniya-net/horno --json tagName -q .tagName)" >> "$GITHUB_OUTPUT"
+      - name: Generate
+        env:
+          HORNO_TAG: ${{ steps.horno.outputs.tag }}
+        run: |
+          npm test
+          node src/index.mjs
+          node src/neoforge-index.mjs
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    needs: generate
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

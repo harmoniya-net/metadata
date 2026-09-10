@@ -1,0 +1,11 @@
+{
+  "name": "metadata",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.mjs",
+    "start:neoforge": "node src/neoforge-index.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "description": "Version documents for every published Forge and NeoForge build."
+}
