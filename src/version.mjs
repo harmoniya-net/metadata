@@ -117,7 +117,39 @@ async function buildProcessor({ forgeId, mc, documents, classifiers }) {
     const installer = await forgeFileLibrary(forgeId, 'installer', classifiers.installer);
     if (!installer) throw new Error(`Processor build ${forgeId} has no reachable installer`);
 
-    return processorDocument({ source, mc, installer, id: documentId(forgeId, mc) });
+    return processorDocument({
+        source: { ...source, libraries: await withLauncher(source.libraries ?? [], forgeId, classifiers) },
+        mc,
+        installer,
+        id: documentId(forgeId, mc),
+    });
+}
+
+/**
+ * Forge's own jar, given the address it was published at.
+ *
+ * From 1.13.2 through 1.16.5 the version JSON lists `net.minecraftforge:forge:<id>`
+ * with an empty URL, because the installer carries the file under `maven/` and
+ * unpacks it. It is not something a processor makes — it is the jar that holds
+ * the `fmlclient` launch target — so dropping it with the entries that are
+ * leaves a document that installs and then cannot find what to launch. Maven
+ * has the same bytes as `-launcher`, which is how those builds are told apart:
+ * 1.17 moved the launch targets into libraries with addresses of their own and
+ * stopped publishing one.
+ */
+export async function withLauncher(libraries, forgeId, classifiers, resolve = resolveArtifact) {
+    if (!classifiers?.launcher) return libraries;
+    const own = `net.minecraftforge:forge:${forgeId}`;
+    return Promise.all(
+        libraries.map(async entry => {
+            if (entry.name !== own || entry.downloads?.artifact?.url) return entry;
+            const url = artifactUrl(forgeId, 'launcher', classifiers.launcher);
+            const resolved = await resolve([url]);
+            if (!resolved) throw new Error(`${forgeId} lists a launcher jar that is not at ${url}`);
+            const path = entry.downloads?.artifact?.path ?? coordPath(parseCoord(own));
+            return { ...entry, downloads: { artifact: { path, url: resolved.url, sha1: resolved.sha1, size: resolved.size } } };
+        }),
+    );
 }
 
 async function buildLegacy({ forgeId, mc, documents, vanillaLibraries }) {
@@ -152,7 +184,24 @@ async function buildLegacy({ forgeId, mc, documents, vanillaLibraries }) {
     };
     if (source.minecraftArguments) document.minecraftArguments = source.minecraftArguments;
     if (source.arguments) document.arguments = source.arguments;
+    const jvm = legacyJvmArguments(mc);
+    if (jvm.length > 0) document.arguments = { ...document.arguments, jvm: [...jvm, ...(document.arguments?.jvm ?? [])] };
     return document;
+}
+
+/**
+ * What a pre-1.13 build has to be told on the command line to start at all.
+ *
+ * FML 6 — Forge for 1.6.2, 1.6.3 and 1.6.4 — refuses to launch unless the
+ * client jar's signature verifies, and it no longer can: Mojang signed those
+ * jars with SHA-1 in 2013, and every Java 8 since 8u275 treats a SHA-1
+ * signature as none. The jar is the one Mojang publishes and is pinned by its
+ * hash in the base version, so the check FML wanted has been made, by something
+ * that can still make it. 1.6.1 predates the check and 1.7 onwards only warns,
+ * which is why the flag is not on every legacy document.
+ */
+export function legacyJvmArguments(mc) {
+    return /^1\.6\.[2-4]$/.test(mc) ? ['-Dfml.ignoreInvalidMinecraftCertificates=true'] : [];
 }
 
 async function buildPatched({ forgeId, mc, era, documents, classifiers, vanillaLibraries }) {

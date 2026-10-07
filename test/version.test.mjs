@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ERA } from '../src/era.mjs';
 import { fetchedBy, stripModuleArgs } from '../src/document.mjs';
-import { buildVersionJson, withoutVanillaDuplicates } from '../src/version.mjs';
+import { buildVersionJson, legacyJvmArguments, withLauncher, withoutVanillaDuplicates } from '../src/version.mjs';
 
 test('drops a module argument and the value that follows it', () => {
     assert.deepEqual(stripModuleArgs(['-p', 'a.jar:b.jar', '-Xmx2G']), ['-Xmx2G']);
@@ -123,4 +123,39 @@ test('the ancient overlay is spelt the same way as the installer', () => {
         '-Dhorno.jarmodUrl=https://example.test/c.zip',
         '-Dhorno.jarmodSha1=abc',
     ]);
+});
+
+const FORGE_ID = '1.16.5-36.2.34';
+const OWN = {
+    name: `net.minecraftforge:forge:${FORGE_ID}`,
+    downloads: { artifact: { path: `net/minecraftforge/forge/${FORGE_ID}/forge-${FORGE_ID}.jar`, url: '', sha1: 'aa', size: 1 } },
+};
+const CLIENT = { name: `net.minecraftforge:forge:${FORGE_ID}:client`, downloads: { artifact: { path: 'x', url: '' } } };
+
+test("addresses Forge's own jar at the launcher classifier, under the path the document gave it", async () => {
+    const asked = [];
+    const resolve = async urls => (asked.push(...urls), { url: urls[0], sha1: 'b05f', size: 212608 });
+    const [own, client] = await withLauncher([OWN, CLIENT], FORGE_ID, { installer: 'jar', launcher: 'jar' }, resolve);
+
+    assert.match(asked[0], /forge-1\.16\.5-36\.2\.34-launcher\.jar$/);
+    assert.deepEqual(own.downloads.artifact, { path: OWN.downloads.artifact.path, url: asked[0], sha1: 'b05f', size: 212608 });
+    // What a processor produces still has no address, and is still dropped later.
+    assert.equal(client, CLIENT);
+});
+
+test('leaves the list alone for a build that publishes no launcher jar', async () => {
+    const never = async () => assert.fail('nothing to resolve');
+    assert.deepEqual(await withLauncher([OWN], FORGE_ID, { installer: 'jar' }, never), [OWN]);
+});
+
+test('a launcher jar the document needs and maven lacks is an error, not a gap', async () => {
+    await assert.rejects(withLauncher([OWN], FORGE_ID, { launcher: 'jar' }, async () => null), /launcher jar/);
+});
+
+test('tells FML 6 to launch on a client jar whose signature Java no longer reads', () => {
+    for (const mc of ['1.6.2', '1.6.3', '1.6.4']) {
+        assert.deepEqual(legacyJvmArguments(mc), ['-Dfml.ignoreInvalidMinecraftCertificates=true']);
+    }
+    // 1.6.1 has no such check, and from 1.7 a failed one is only a warning.
+    for (const mc of ['1.6.1', '1.7.2', '1.7.10', '1.12.2']) assert.deepEqual(legacyJvmArguments(mc), []);
 });
