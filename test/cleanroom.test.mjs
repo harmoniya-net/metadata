@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { cleanroomDocument, flatten, minecraftVersionOf, releaseOf, shadowed, withPaths } from '../src/cleanroom.mjs';
+import { cleanroomDocument, flatten, minecraftVersionOf, releaseOf, shadowed } from '../src/cleanroom.mjs';
 
 const lib = (name, url = `https://example.test/${name}.jar`, sha1 = 'a'.repeat(40)) => ({
     name,
@@ -133,28 +133,4 @@ test('an empty logging object is dropped, a real one kept', () => {
     assert.equal('logging' in run({}), false);
     const real = { client: { argument: '-Dlog4j.configurationFile=${path}' } };
     assert.deepEqual(run(real).logging, real);
-});
-
-test('a download with no path is given the one its coordinate implies', () => {
-    const entry = {
-        name: 'com.mojang:text2speech:1.10.3',
-        natives: { linux: 'natives-linux' },
-        downloads: {
-            artifact: { url: 'https://example.test/t2s.jar', sha1: 'a'.repeat(40), size: 1 },
-            classifiers: { 'natives-linux': { url: 'https://example.test/t2s-linux.jar', sha1: 'b'.repeat(40), size: 2 } },
-        },
-    };
-    const located = withPaths(entry);
-    assert.equal(located.downloads.artifact.path, 'com/mojang/text2speech/1.10.3/text2speech-1.10.3.jar');
-    assert.equal(
-        located.downloads.classifiers['natives-linux'].path,
-        'com/mojang/text2speech/1.10.3/text2speech-1.10.3-natives-linux.jar',
-    );
-    assert.deepEqual(located.natives, entry.natives);
-});
-
-test('a path the document states is left exactly as stated', () => {
-    const entry = lib('org.lwjgl:lwjgl:3.4.1:natives-linux');
-    assert.deepEqual(withPaths(entry), entry);
-    assert.deepEqual(withPaths({ name: 'a:b:1' }), { name: 'a:b:1' });
 });

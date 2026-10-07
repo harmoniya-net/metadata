@@ -1,7 +1,7 @@
 # metadata
 
-A plain Mojang `version.json` for every published Forge, NeoForge and Cleanroom
-build, served from this repository's GitHub Pages site.
+A plain Mojang `version.json` for every published Forge, NeoForge, Cleanroom
+and lwjgl3ify build, served from this repository's GitHub Pages site.
 
 **No installer, ever.** A launcher never downloads one, never runs one, never
 reads an install profile, and needs no idea that Forge exists. If it can read a
@@ -16,7 +16,7 @@ libraries, start `mainClass`. That is the whole integration.
 
 ```
 https://harmoniya-net.github.io/metadata/
-  index.json                            the three families and where their indexes are
+  index.json                            the four families and where their indexes are
 
   forge/
     index.json                          every Minecraft version and its builds
@@ -28,6 +28,7 @@ https://harmoniya-net.github.io/metadata/
 
   neoforge/                             the same five
   cleanroom/                            the same five
+  lwjgl3ify/                            the same five
 ```
 
 An index entry:
@@ -48,12 +49,12 @@ An index entry:
 }
 ```
 
-All three families are laid out and spelled identically; only the addresses
+All four families are laid out and spelled identically; only the addresses
 differ.
 
 NeoForge publishes no promotions, so its index decides for itself: `latest` is
 the newest build, `recommended` the newest whose version carries no qualifier.
-Cleanroom's does the same from GitHub's prerelease flag.
+Cleanroom's and lwjgl3ify's do the same from GitHub's prerelease flag.
 
 ## horno
 
@@ -114,6 +115,19 @@ shipped patches over 1.12.2, and are published here already folded onto it,
 because the fold needs one rule no reader's merge has: vanilla's LWJGL 2 has to
 go, and it lives under a different group than the LWJGL 3 that replaces it.
 
+## lwjgl3ify
+
+Forge 1.7.10 on LWJGL 3 and a current JVM. Like Cleanroom's, its documents are
+complete version JSONs with no horno — here because there is no installer at
+all: every release ships a `version.json`, and this is that file with its
+libraries made installable. As shipped, most have no `path`, and in older
+releases some have no download or an empty hash; a few point at a maven that
+has since dropped them, and are addressed at the release's own assets instead.
+
+One thing a document cannot say: lwjgl3ify is also a mod. Its jar, and
+[UniMixins](https://github.com/LegacyModdingMC/UniMixins), go in `mods/`, and
+that is left to whoever installs the game.
+
 ## Running it
 
 ```sh
@@ -127,6 +141,9 @@ node src/neoforge-index.mjs --only 21.1.172
 
 node src/cleanroom-index.mjs             # every Cleanroom release
 node src/cleanroom-index.mjs --only 0.6.13-alpha
+
+node src/lwjgl3ify-index.mjs             # every lwjgl3ify release
+node src/lwjgl3ify-index.mjs --only 3.0.37
 
 node src/root-index.mjs                  # the site root's index.json
 
@@ -142,6 +159,6 @@ the aliases alone: one build is no evidence about which is newest.
 | `HORNO_JAR` | a local jar to hash instead, for runs made before that release exists |
 | `SITE_BASE` | the host the index's URLs are absolute against |
 | `CONCURRENCY` | parallel builds, default 12 |
-| `GITHUB_TOKEN` | optional, for listing Cleanroom's releases past the anonymous rate limit |
+| `GITHUB_TOKEN` | optional, for listing GitHub releases past the anonymous rate limit |
 
 Everything read is cached under `.cache/`, so only the first run pays for it.

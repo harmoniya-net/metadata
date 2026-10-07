@@ -8,6 +8,7 @@ test('names each family and the address of its index', () => {
             { name: 'forge', index: 'https://example.test/metadata/forge/index.json' },
             { name: 'neoforge', index: 'https://example.test/metadata/neoforge/index.json' },
             { name: 'cleanroom', index: 'https://example.test/metadata/cleanroom/index.json' },
+            { name: 'lwjgl3ify', index: 'https://example.test/metadata/lwjgl3ify/index.json' },
         ],
     });
 });

@@ -20,9 +20,10 @@ import path from 'node:path';
 import CONFIG from './config.mjs';
 import { resolveArtifact } from './artifacts.mjs';
 import { loggingOf } from './document.mjs';
-import { coordPath, parseCoord, withClassifier } from './maven.mjs';
+import { withPaths } from './libraries.mjs';
+import { releases } from './github.mjs';
 import { readEntries } from './remote-zip.mjs';
-import { fetchWithRetry, readJson, writeJson } from './utils.mjs';
+import { readJson, writeJson } from './utils.mjs';
 
 const isInstaller = name => /-installer\.jar$/.test(name);
 const isUniversal = name => /-universal\.jar$/.test(name);
@@ -46,20 +47,7 @@ export function releaseOf(release) {
 
 /** Every publishable release, oldest first. */
 export async function fetchReleases() {
-    const headers = { Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
-    if (CONFIG.GITHUB_TOKEN) headers.Authorization = `Bearer ${CONFIG.GITHUB_TOKEN}`;
-
-    const releases = [];
-    for (let page = 1; ; page++) {
-        const url = `${CONFIG.GITHUB_API}/repos/${CONFIG.CLEANROOM_REPO}/releases?per_page=100&page=${page}`;
-        const response = await fetchWithRetry(url, { headers });
-        if (!response.ok) throw new Error(`GET ${url} -> ${response.status} ${response.statusText}`);
-        const batch = await response.json();
-        releases.push(...batch);
-        if (batch.length < 100) break;
-    }
-    // GitHub lists newest first; an index lists builds in the order they shipped.
-    return releases.map(releaseOf).filter(Boolean).reverse();
+    return (await releases(CONFIG.CLEANROOM_REPO)).map(releaseOf).filter(Boolean);
 }
 
 const DOCUMENTS = ['install_profile.json', 'version.json'];
@@ -126,39 +114,6 @@ export function flatten(patch, vanilla) {
         ...base,
         ...own,
         libraries: [...patch.libraries, ...libraries.filter(l => !shadowed(l, patchModules))],
-    };
-}
-
-/**
- * A library entry with every download given the `path` it lands at.
- *
- * The standalone documents list a dozen of Mojang's libraries with a `url` and
- * no `path`. Mojang's own entries always carry one, and it is not optional to
- * a reader that installs by path — so it is derived here, once, the only way
- * it can be: from the coordinate.
- */
-export function withPaths(library) {
-    const downloads = library.downloads;
-    if (!downloads) return library;
-    const coord = parseCoord(library.name);
-    const located = (download, at) => (download.path ? download : { path: coordPath(at), ...download });
-
-    return {
-        ...library,
-        downloads: {
-            ...downloads,
-            ...(downloads.artifact ? { artifact: located(downloads.artifact, coord) } : {}),
-            ...(downloads.classifiers
-                ? {
-                      classifiers: Object.fromEntries(
-                          Object.entries(downloads.classifiers).map(([classifier, download]) => [
-                              classifier,
-                              located(download, withClassifier(coord, classifier)),
-                          ]),
-                      ),
-                  }
-                : {}),
-        },
     };
 }
 

@@ -25,8 +25,9 @@ export const CONFIG = {
     /** NeoForge publishes no promotions endpoint; the version list is the whole API. */
     NEOFORGE_VERSIONS: 'https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge',
     NEOFORGE_MAVEN: 'https://maven.neoforged.net/releases',
-    /** Cleanroom publishes on GitHub Releases and nowhere else that carries the runtime jar. */
+    /** Cleanroom and lwjgl3ify publish on GitHub Releases. */
     CLEANROOM_REPO: 'CleanroomMC/Cleanroom',
+    LWJGL3IFY_REPO: 'GTNewHorizons/lwjgl3ify',
     GITHUB_API: 'https://api.github.com',
     /** Optional. One listing request per run fits the anonymous limit; a token is for CI's shared address. */
     GITHUB_TOKEN: process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN ?? null,
@@ -34,6 +35,7 @@ export const CONFIG = {
     DOCUMENT_CACHE: path.join(CACHE_DIR, 'documents'),
     NEOFORGE_DOCUMENT_CACHE: path.join(CACHE_DIR, 'neoforge-documents'),
     CLEANROOM_DOCUMENT_CACHE: path.join(CACHE_DIR, 'cleanroom-documents'),
+    LWJGL3IFY_DOCUMENT_CACHE: path.join(CACHE_DIR, 'lwjgl3ify-documents'),
     VANILLA_CACHE: path.join(CACHE_DIR, 'vanilla'),
     META_CACHE: path.join(CACHE_DIR, 'forge-meta.json'),
     ARTIFACT_CACHE: path.join(CACHE_DIR, 'artifacts.json'),
@@ -43,6 +45,7 @@ export const CONFIG = {
     FORGE_DIR: path.join(process.cwd(), 'public', 'forge'),
     NEOFORGE_DIR: path.join(process.cwd(), 'public', 'neoforge'),
     CLEANROOM_DIR: path.join(process.cwd(), 'public', 'cleanroom'),
+    LWJGL3IFY_DIR: path.join(process.cwd(), 'public', 'lwjgl3ify'),
     CONCURRENCY: Number(process.env.CONCURRENCY ?? 12),
 };
 

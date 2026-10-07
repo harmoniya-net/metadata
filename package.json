@@ -6,7 +6,8 @@
     "start": "node src/index.mjs",
     "start:neoforge": "node src/neoforge-index.mjs",
     "start:cleanroom": "node src/cleanroom-index.mjs",
+    "start:lwjgl3ify": "node src/lwjgl3ify-index.mjs",
     "test": "node --test test/*.test.mjs"
   },
-  "description": "Version documents for every published Forge, NeoForge and Cleanroom build."
+  "description": "Version documents for every published Forge, NeoForge, Cleanroom and lwjgl3ify build."
 }

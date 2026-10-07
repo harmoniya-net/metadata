@@ -9,7 +9,7 @@ import { ensureDir, writeJson } from './utils.mjs';
  */
 export function rootIndex(site) {
     return {
-        families: ['forge', 'neoforge', 'cleanroom'].map((name) => ({ name, index: `${site}/${name}/index.json` })),
+        families: ['forge', 'neoforge', 'cleanroom', 'lwjgl3ify'].map((name) => ({ name, index: `${site}/${name}/index.json` })),
     };
 }
 
