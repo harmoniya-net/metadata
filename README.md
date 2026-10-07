@@ -16,6 +16,8 @@ libraries, start `mainClass`. That is the whole integration.
 
 ```
 https://harmoniya-net.github.io/metadata/
+  index.json                            the two families and where their indexes are
+
   forge/
     index.json                          every Minecraft version and its builds
     versions/<mc>/<build>.json          one build's document
@@ -106,6 +108,8 @@ node src/index.mjs --only 1.4.7-6.6.2.534
 node src/neoforge-index.mjs              # every NeoForge build
 node src/neoforge-index.mjs --mc 1.21.1
 node src/neoforge-index.mjs --only 21.1.172
+
+node src/root-index.mjs                  # the site root's index.json
 
 npm test
 ```
