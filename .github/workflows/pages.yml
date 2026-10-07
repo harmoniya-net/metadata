@@ -43,10 +43,14 @@ jobs:
       - name: Generate
         env:
           HORNO_TAG: ${{ steps.horno.outputs.tag }}
+          # Cleanroom is read off GitHub Releases; the runner's shared address
+          # would otherwise spend the anonymous rate limit for it.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npm test
           node src/index.mjs
           node src/neoforge-index.mjs
+          node src/cleanroom-index.mjs
           node src/root-index.mjs
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node src/index.mjs",
     "start:neoforge": "node src/neoforge-index.mjs",
+    "start:cleanroom": "node src/cleanroom-index.mjs",
     "test": "node --test test/*.test.mjs"
   },
-  "description": "Version documents for every published Forge and NeoForge build."
+  "description": "Version documents for every published Forge, NeoForge and Cleanroom build."
 }

@@ -67,6 +67,7 @@ const ZIP = buildZip([
 let server;
 let base;
 let honourRanges = true;
+let refuseSuffix = false;
 let servedBytes = 0;
 
 before(async () => {
@@ -76,6 +77,11 @@ before(async () => {
             servedBytes += ZIP.length;
             response.writeHead(200, { 'content-length': ZIP.length });
             response.end(request.method === 'HEAD' ? undefined : ZIP);
+            return;
+        }
+        if (refuseSuffix && Number(range[1]) < 0) {
+            response.writeHead(501, 'Unsupported client range');
+            response.end();
             return;
         }
         const start = Number(range[1]) < 0 ? ZIP.length + Number(range[1]) : Number(range[1]);
@@ -125,5 +131,17 @@ test('says so when the server ignores the range header', async () => {
         await assert.rejects(() => readEntries(base, ['version.json']), RangeUnsupportedError);
     } finally {
         honourRanges = true;
+    }
+});
+
+test('reads the tail by address when the server refuses a suffix range', async () => {
+    // GitHub's release host: 501 to `bytes=-N`, 206 to `bytes=a-b`.
+    refuseSuffix = true;
+    try {
+        const entries = await readEntries(base, ['version.json']);
+        assert.equal(JSON.parse(entries.get('version.json').toString()).inheritsFrom, '1.20.1');
+        assert.deepEqual(await listEntries(base), ['install_profile.json', 'maven/big.jar', 'version.json']);
+    } finally {
+        refuseSuffix = false;
     }
 });

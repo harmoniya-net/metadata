@@ -1,6 +1,8 @@
 import CONFIG from './config.mjs';
 import { createCache } from './cache.mjs';
-import { fetchJson } from './utils.mjs';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fetchJson, readJson, writeJson } from './utils.mjs';
 
 const cache = createCache(CONFIG.MOJANG_CACHE);
 let index = null;
@@ -40,4 +42,22 @@ export async function vanillaVersion(id) {
         // restates one or overrides it.
         libraries: (version.libraries ?? []).map(l => ({ name: l.name })),
     });
+}
+
+/**
+ * A vanilla version document, whole. `vanillaVersion` keeps three fields
+ * because that is all Forge's documents ask of it; a family that publishes
+ * complete version JSONs has to carry the rest — the asset index, the client
+ * download, every library entry as Mojang wrote it.
+ */
+export async function vanillaDocument(id) {
+    const file = path.join(CONFIG.VANILLA_CACHE, `${id}.json`);
+    if (fs.existsSync(file)) return readJson(file);
+
+    const url = index.get(id);
+    if (!url) return null;
+
+    const version = await fetchJson(url);
+    writeJson(file, version);
+    return version;
 }

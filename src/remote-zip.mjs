@@ -38,9 +38,33 @@ async function fetchRange(url, start, end) {
         throw new RangeUnsupportedError(url);
     }
     if (response.status !== 206) {
-        throw new Error(`GET ${url} [${range}] -> ${response.status} ${response.statusText}`);
+        const error = new Error(`GET ${url} [${range}] -> ${response.status} ${response.statusText}`);
+        error.status = response.status;
+        throw error;
     }
     return Buffer.from(await response.arrayBuffer());
+}
+
+/**
+ * The last `TAIL_SIZE` bytes of the archive.
+ *
+ * A suffix range (`bytes=-N`) is one request and needs no length, so it is
+ * tried first. GitHub's release host answers it `501 Unsupported client range`
+ * while serving absolute ranges happily, so a 501 is asked again the long way:
+ * a HEAD for the length, then the same bytes by address.
+ */
+async function fetchTail(url) {
+    try {
+        return await fetchRange(url, -TAIL_SIZE, 0);
+    } catch (error) {
+        if (error.status !== 501) throw error;
+    }
+    const head = await fetch(url, { method: 'HEAD' });
+    const length = Number(head.headers.get('content-length'));
+    if (!head.ok || !Number.isFinite(length) || length <= 0) {
+        throw new Error(`HEAD ${url} -> ${head.status}, no usable content-length`);
+    }
+    return fetchRange(url, Math.max(0, length - TAIL_SIZE), length);
 }
 
 function findEocd(tail) {
@@ -82,7 +106,7 @@ function inflate(data, method) {
  * @returns {Promise<Map<string, Buffer>>}
  */
 export async function readEntries(url, names) {
-    const tail = await fetchRange(url, -TAIL_SIZE, 0);
+    const tail = await fetchTail(url);
     const eocd = findEocd(tail);
     if (eocd < 0) {
         // Zip64, or a comment longer than the tail we read. Neither has ever
@@ -111,7 +135,7 @@ export async function readEntries(url, names) {
 
 /** The entry names present in the archive, read from the central directory alone. */
 export async function listEntries(url) {
-    const tail = await fetchRange(url, -TAIL_SIZE, 0);
+    const tail = await fetchTail(url);
     const eocd = findEocd(tail);
     if (eocd < 0) {
         throw new Error(`No end-of-central-directory record in the last ${TAIL_SIZE} bytes of ${url}`);

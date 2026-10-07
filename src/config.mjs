@@ -25,9 +25,16 @@ export const CONFIG = {
     /** NeoForge publishes no promotions endpoint; the version list is the whole API. */
     NEOFORGE_VERSIONS: 'https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge',
     NEOFORGE_MAVEN: 'https://maven.neoforged.net/releases',
+    /** Cleanroom publishes on GitHub Releases and nowhere else that carries the runtime jar. */
+    CLEANROOM_REPO: 'CleanroomMC/Cleanroom',
+    GITHUB_API: 'https://api.github.com',
+    /** Optional. One listing request per run fits the anonymous limit; a token is for CI's shared address. */
+    GITHUB_TOKEN: process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN ?? null,
     MOJANG_MANIFEST: 'https://launchermeta.mojang.com/mc/game/version_manifest_v2.json',
     DOCUMENT_CACHE: path.join(CACHE_DIR, 'documents'),
     NEOFORGE_DOCUMENT_CACHE: path.join(CACHE_DIR, 'neoforge-documents'),
+    CLEANROOM_DOCUMENT_CACHE: path.join(CACHE_DIR, 'cleanroom-documents'),
+    VANILLA_CACHE: path.join(CACHE_DIR, 'vanilla'),
     META_CACHE: path.join(CACHE_DIR, 'forge-meta.json'),
     ARTIFACT_CACHE: path.join(CACHE_DIR, 'artifacts.json'),
     MOJANG_CACHE: path.join(CACHE_DIR, 'mojang.json'),
@@ -35,6 +42,7 @@ export const CONFIG = {
     /** One directory per loader family, so neither is the special one. */
     FORGE_DIR: path.join(process.cwd(), 'public', 'forge'),
     NEOFORGE_DIR: path.join(process.cwd(), 'public', 'neoforge'),
+    CLEANROOM_DIR: path.join(process.cwd(), 'public', 'cleanroom'),
     CONCURRENCY: Number(process.env.CONCURRENCY ?? 12),
 };
 

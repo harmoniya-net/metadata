@@ -1,12 +1,12 @@
 # metadata
 
-A plain Mojang `version.json` for every published Forge and NeoForge build,
-served from this repository's GitHub Pages site.
+A plain Mojang `version.json` for every published Forge, NeoForge and Cleanroom
+build, served from this repository's GitHub Pages site.
 
 **No installer, ever.** A launcher never downloads one, never runs one, never
 reads an install profile, and needs no idea that Forge exists. If it can read a
-Mojang version JSON, it can launch every Forge and NeoForge build ever
-published — a 2012 jar mod exactly as a 2025 processor build.
+Mojang version JSON, it can launch every Forge, NeoForge and Cleanroom build
+ever published — a 2012 jar mod exactly as a 2025 processor build.
 
 Resolve a build against the index, fetch its document, and treat it like any
 other version JSON: resolve `inheritsFrom` against Mojang's, download the
@@ -16,7 +16,7 @@ libraries, start `mainClass`. That is the whole integration.
 
 ```
 https://harmoniya-net.github.io/metadata/
-  index.json                            the two families and where their indexes are
+  index.json                            the three families and where their indexes are
 
   forge/
     index.json                          every Minecraft version and its builds
@@ -27,6 +27,7 @@ https://harmoniya-net.github.io/metadata/
     skipped.json                        builds that produced nothing, with the reason
 
   neoforge/                             the same five
+  cleanroom/                            the same five
 ```
 
 An index entry:
@@ -47,10 +48,12 @@ An index entry:
 }
 ```
 
-Both families are laid out and spelled identically; only the addresses differ.
+All three families are laid out and spelled identically; only the addresses
+differ.
 
 NeoForge publishes no promotions, so its index decides for itself: `latest` is
 the newest build, `recommended` the newest whose version carries no qualifier.
+Cleanroom's does the same from GitHub's prerelease flag.
 
 ## horno
 
@@ -98,6 +101,19 @@ never reads one. Note the installer among them — it is named there rather than
 declared a library, because it is horno's input and has no business on the
 game's classpath.
 
+## Cleanroom
+
+Cleanroom's documents are the simplest here: a **complete** version JSON, with
+no `inheritsFrom` and no horno. Its installer has never run a processor — it
+only unpacks one jar, and that jar is also a release asset, so the document
+lists it at that address like any other library. Download the libraries and
+start `mainClass`; nothing runs first.
+
+That is the shape Cleanroom itself ships from 0.5.16-alpha on. Earlier releases
+shipped patches over 1.12.2, and are published here already folded onto it,
+because the fold needs one rule no reader's merge has: vanilla's LWJGL 2 has to
+go, and it lives under a different group than the LWJGL 3 that replaces it.
+
 ## Running it
 
 ```sh
@@ -108,6 +124,9 @@ node src/index.mjs --only 1.4.7-6.6.2.534
 node src/neoforge-index.mjs              # every NeoForge build
 node src/neoforge-index.mjs --mc 1.21.1
 node src/neoforge-index.mjs --only 21.1.172
+
+node src/cleanroom-index.mjs             # every Cleanroom release
+node src/cleanroom-index.mjs --only 0.6.13-alpha
 
 node src/root-index.mjs                  # the site root's index.json
 
@@ -123,5 +142,6 @@ the aliases alone: one build is no evidence about which is newest.
 | `HORNO_JAR` | a local jar to hash instead, for runs made before that release exists |
 | `SITE_BASE` | the host the index's URLs are absolute against |
 | `CONCURRENCY` | parallel builds, default 12 |
+| `GITHUB_TOKEN` | optional, for listing Cleanroom's releases past the anonymous rate limit |
 
 Everything read is cached under `.cache/`, so only the first run pays for it.
