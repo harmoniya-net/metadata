@@ -53,6 +53,9 @@ jobs:
           node src/cleanroom-index.mjs
           node src/lwjgl3ify-index.mjs
           node src/root-index.mjs
+      - name: Add the files served as they are
+        # `static/` is what no generator produces: see static/README.md.
+        run: cp -R static/. public/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: public
